@@ -1,0 +1,56 @@
+version: "3.9"
+services:
+  api:
+    build:
+      dockerfile: Dockerfile.local
+    ports:
+      - "8000:8000"
+    depends_on:
+      psql_db:
+        condition: service_healthy
+      mongo_db:
+        condition: service_healthy
+    container_name: api
+    env_file:
+      - .env
+    entrypoint: >
+      sh -c "uvicorn core.main:app --host 0.0.0.0 --port 8000 --reload"
+    restart: on-failure
+    volumes:
+      - ./.:/app
+
+
+  psql_db:
+    image: postgres:15.1-alpine
+    ports:
+      - "5432:5432"
+    container_name: psql_db
+    env_file:
+      - .env
+    restart: on-failure
+    healthcheck:
+      test: pg_isready -d ${POSTGRES_DB}
+      interval: 3s
+      timeout: 2s
+      retries: 3
+    volumes:
+      - psql_data:/var/lib/postgresql/data
+
+  mongo_db:
+    image: mongo:7.0-rc-jammy
+    container_name: mongo_db
+    env_file:
+      - .env
+    healthcheck:
+      test: mongosh --eval 'db.runCommand("ping").ok' --quiet
+      interval: 3s
+      timeout: 2s
+      retries: 3
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  psql_data:
+  mongo_data:
