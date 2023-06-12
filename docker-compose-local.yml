@@ -6,10 +6,10 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      psql_db:
+       psql_db:
         condition: service_healthy
-      mongo_db:
-        condition: service_healthy
+       mongo_db:
+        condition: service_started
     container_name: api
     env_file:
       - .env
@@ -37,15 +37,10 @@ services:
       - psql_data:/var/lib/postgresql/data
 
   mongo_db:
-    image: mongo:7.0-rc-jammy
+    image: mongo
     container_name: mongo_db
     env_file:
       - .env
-    healthcheck:
-      test: mongosh --eval 'db.runCommand("ping").ok' --quiet
-      interval: 3s
-      timeout: 2s
-      retries: 3
     ports:
       - '27017:27017'
     volumes:

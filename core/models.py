@@ -4,8 +4,6 @@ from sqlalchemy import Column, ForeignKey, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from . import APP_NAME, utils
-
-# from .db import Base
 from .base import Base
 from .mixins import TimeStampMixin
 
@@ -33,10 +31,3 @@ class Role(TimeStampMixin, Base):
     __tablename__ = role_table_name
     name: Mapped[str] = mapped_column(String(20))
     users: Mapped[list[User]] = relationship(secondary=m2m_user_role_table, back_populates="roles")
-    tokens: Mapped[list[Token]] = relationship(back_populates="role")
-
-
-class Token(TimeStampMixin, Base):
-    value: Mapped[str] = mapped_column(String(128))
-    role_id: Mapped[int] = mapped_column(ForeignKey(f"{role_table_name}.id"))
-    role: Mapped[Role] = relationship(back_populates="tokens")
