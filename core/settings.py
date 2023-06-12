@@ -28,13 +28,15 @@ class Settings(BaseSettings):
         env_file_encoding = "utf-8"
         case_sensitive = True
 
-    def get_psql_url(self) -> str:
+    @property
+    def psql_url(self) -> str:
         return (
             f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 
-    def get_mongo_url(self) -> str:
+    @property
+    def mongo_url(self) -> str:
         return (
             f"{self.MONGO_CONNECTION_TYPE}://{self.MONGO_INITDB_ROOT_USERNAME}:{self.MONGO_INITDB_ROOT_PASSWORD}@"
             f"{self.MONGO_HOST}/{self.MONGO_INITDB_DATABASE}?authSource={self.MONGO_AUTH_SOURCE}"
