@@ -16,8 +16,8 @@ async def get_sql_db_session() -> AsyncSession:
 
 
 async def get_no_sql_client() -> motor_asyncio.AsyncIOMotorDatabase:
-    client: motor_asyncio.AsyncIOMotorClient = motor_asyncio.AsyncIOMotorClient(SETTINGS.mongo_url)
+    client: motor_asyncio.AsyncIOMotorClient = motor_asyncio.AsyncIOMotorClient(SETTINGS.MONGO.url)
     try:
-        yield client[SETTINGS.MONGO_INITDB_DATABASE]
+        yield client[SETTINGS.MONGO.MONGO_INITDB_DATABASE]
     finally:
         client.close()

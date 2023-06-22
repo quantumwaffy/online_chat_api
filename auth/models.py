@@ -1,8 +1,7 @@
-from __future__ import annotations
-
 from sqlalchemy import Column, ForeignKey, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from chat.models import m2m_user_chat_table
 from core import base as core_base
 from core import mixins as core_mixins
 from core import utils as core_utils
@@ -23,8 +22,9 @@ class User(core_mixins.TimeStampMixin, core_base.Base):
     last_name: Mapped[str] = mapped_column(String(40))
     nickname: Mapped[str] = mapped_column(String(20), unique=True)
     password_hash: Mapped[str] = mapped_column(String(128))
-    roles: Mapped[list[Role]] = relationship(secondary=m2m_user_role_table, back_populates="users")
-    chats: Mapped[list[Chat]] = relationship(secondary="m2m_user_chat_table", back_populates="users")  # noqa
+    disabled: Mapped[bool] = mapped_column(default=False)
+    roles: Mapped[list["Role"]] = relationship(secondary=m2m_user_role_table, back_populates="users")
+    chats: Mapped[list["Chat"]] = relationship(secondary=m2m_user_chat_table, back_populates="users")  # noqa
 
 
 class Role(core_mixins.TimeStampMixin, core_base.Base):

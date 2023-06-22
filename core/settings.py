@@ -1,20 +1,24 @@
 from pydantic import BaseSettings
 
+from .mixins import EnvSettingsMixin
 
-class Settings(BaseSettings):
-    """
-    Project settings, which are defined through an .env file
-    """
 
-    DEBUG: bool
-    TZ: str
-
+class PSQLSettings(EnvSettingsMixin):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
     POSTGRES_HOST: str
     POSTGRES_PORT: str
 
+    @property
+    def url(self) -> str:
+        return (
+            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+
+
+class MongoSettings(EnvSettingsMixin):
     MONGO_INITDB_ROOT_USERNAME: str
     MONGO_INITDB_ROOT_PASSWORD: str
     MONGO_INITDB_DATABASE: str
@@ -23,25 +27,38 @@ class Settings(BaseSettings):
     MONGO_AUTH_SOURCE: str = "admin"
     MONGO_EXTRA_URL_PARAMS: str = "retryWrites=true&w=majority"
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
-
     @property
-    def psql_url(self) -> str:
-        return (
-            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-        )
-
-    @property
-    def mongo_url(self) -> str:
+    def url(self) -> str:
         return (
             f"{self.MONGO_CONNECTION_TYPE}://{self.MONGO_INITDB_ROOT_USERNAME}:{self.MONGO_INITDB_ROOT_PASSWORD}@"
             f"{self.MONGO_HOST}/{self.MONGO_INITDB_DATABASE}?authSource={self.MONGO_AUTH_SOURCE}"
             f"&{self.MONGO_EXTRA_URL_PARAMS}"
         )
+
+
+class AuthenticationSettings(EnvSettingsMixin):
+    JWT_ACCESS_TOKEN_SECRET_KEY: str
+    JWT_REFRESH_TOKEN_SECRET_KEY: str
+    JWT_ALGORITHM: str
+    JWT_ACCESS_TOKEN_EXPIRE_MIN: int
+    JWT_REFRESH_TOKEN_EXPIRE_MIN: int
+    JWT_TOKEN_NAME: str = "Token"
+
+
+class AppSettings(EnvSettingsMixin):
+    DEBUG: bool
+    TZ: str
+
+
+class Settings(BaseSettings):
+    """
+    Project settings, which are defined through an .env file
+    """
+
+    APP: AppSettings = AppSettings()
+    AUTH: AuthenticationSettings = AuthenticationSettings()
+    PSQL: PSQLSettings = PSQLSettings()
+    MONGO: MongoSettings = MongoSettings()
 
 
 SETTINGS: Settings = Settings()

@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from core.settings import SETTINGS
 
 engine: AsyncEngine = create_async_engine(
-    SETTINGS.psql_url,
+    SETTINGS.PSQL.url,
     echo=True,
     future=True,
 )
