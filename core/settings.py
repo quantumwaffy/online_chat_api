@@ -1,9 +1,18 @@
+import abc
+
 from pydantic import BaseSettings
 
 from .mixins import EnvSettingsMixin
 
 
-class PSQLSettings(EnvSettingsMixin):
+class ServiceSettings(EnvSettingsMixin, abc.ABC):
+    @property
+    @abc.abstractmethod
+    def url(self) -> str:
+        ...
+
+
+class PSQLSettings(ServiceSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
@@ -18,7 +27,7 @@ class PSQLSettings(EnvSettingsMixin):
         )
 
 
-class MongoSettings(EnvSettingsMixin):
+class MongoSettings(ServiceSettings):
     MONGO_INITDB_ROOT_USERNAME: str
     MONGO_INITDB_ROOT_PASSWORD: str
     MONGO_INITDB_DATABASE: str
@@ -34,6 +43,16 @@ class MongoSettings(EnvSettingsMixin):
             f"{self.MONGO_HOST}/{self.MONGO_INITDB_DATABASE}?authSource={self.MONGO_AUTH_SOURCE}"
             f"&{self.MONGO_EXTRA_URL_PARAMS}"
         )
+
+
+class RedisSettings(ServiceSettings):
+    REDIS_HOST: str
+    REDIS_PASSWORD: str
+    REDIS_PORT: str
+
+    @property
+    def url(self) -> str:
+        return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}"
 
 
 class AuthenticationSettings(EnvSettingsMixin):
@@ -59,6 +78,7 @@ class Settings(BaseSettings):
     AUTH: AuthenticationSettings = AuthenticationSettings()
     PSQL: PSQLSettings = PSQLSettings()
     MONGO: MongoSettings = MongoSettings()
+    REDIS: RedisSettings = RedisSettings()
 
 
 SETTINGS: Settings = Settings()

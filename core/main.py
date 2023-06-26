@@ -1,7 +1,12 @@
+from broadcaster import Broadcast
 from fastapi import FastAPI
 
 from . import routing
 from .settings import SETTINGS
+
+
+def get_broadcast() -> Broadcast:
+    return Broadcast(SETTINGS.REDIS.url)
 
 
 def get_app() -> FastAPI:
@@ -16,3 +21,14 @@ def get_app() -> FastAPI:
 
 
 app: FastAPI = get_app()
+broadcast: Broadcast = get_broadcast()
+
+
+@app.on_event("startup")
+async def startup() -> None:
+    await broadcast.connect()
+
+
+@app.on_event("shutdown")
+async def shutdown() -> None:
+    await broadcast.disconnect()

@@ -20,6 +20,6 @@ m2m_user_chat_table: Table = Table(
 
 class Chat(mixins.TimeStampMixin, base.Base):
     __tablename__ = chat_table_name
-    id: Mapped[str] = mapped_column(primary_key=True, default=lambda: uuid.uuid4().hex)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name: Mapped[str] = mapped_column(String(50))
     users: Mapped[list["User"]] = relationship(secondary=m2m_user_chat_table, back_populates="chats")  # noqa

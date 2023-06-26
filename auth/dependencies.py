@@ -58,6 +58,7 @@ class AuthenticatedUser:
             .where(models.User.nickname == nickname)
         )
         self._user: models.User = (await sql_session.execute(query)).scalar()
+        utils.Authenticator.check_user_perms(self._user)
 
 
 UserDBSchema = Annotated[schemas.UserDB, Depends(AuthenticatedUser(serializable=True))]

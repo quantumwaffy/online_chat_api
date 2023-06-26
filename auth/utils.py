@@ -41,7 +41,7 @@ class Authenticator:
         )
 
     @staticmethod
-    def _check_user_perms(user: models.User | None) -> None:
+    def check_user_perms(user: models.User | None) -> None:
         if not user:
             raise exceptions.BaseAuthExceptionManager.no_user
         if user.disabled:
@@ -72,7 +72,7 @@ class Authenticator:
 
     async def create_jwt_tokens(self, nickname: str, password: str) -> schemas.TokenGeneratedData:
         user: models.User | None = await self._get_user(nickname)
-        self._check_user_perms(user)
+        self.check_user_perms(user)
         if not self.password_handler.verify_password(password, user.password_hash):
             raise exceptions.BaseAuthExceptionManager.authentication_error
         return schemas.TokenGeneratedData(

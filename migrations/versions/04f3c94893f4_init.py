@@ -1,8 +1,8 @@
 """Init
 
-Revision ID: 38ab1f473af6
+Revision ID: 04f3c94893f4
 Revises: 
-Create Date: 2023-06-13 22:29:36.465953
+Create Date: 2023-06-26 18:23:56.571763
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '38ab1f473af6'
+revision = '04f3c94893f4'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -38,7 +38,7 @@ def upgrade() -> None:
     sa.UniqueConstraint('nickname')
     )
     op.create_table('chat_chats',
-    sa.Column('id', sa.String(), nullable=False),
+    sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('name', sa.String(length=50), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
@@ -52,7 +52,7 @@ def upgrade() -> None:
     )
     op.create_table('chat_m2m_user_chat',
     sa.Column('user_id', sa.Integer(), nullable=True),
-    sa.Column('chat_id', sa.String(), nullable=True),
+    sa.Column('chat_id', sa.String(length=36), nullable=True),
     sa.ForeignKeyConstraint(['chat_id'], ['chat_chats.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['auth_users.id'], )
     )
