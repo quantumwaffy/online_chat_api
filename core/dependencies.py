@@ -1,4 +1,7 @@
+from typing import Annotated
+
 from asyncpg import IntegrityConstraintViolationError
+from fastapi import Depends
 from motor import motor_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,3 +24,7 @@ async def get_no_sql_client() -> motor_asyncio.AsyncIOMotorDatabase:
         yield client[SETTINGS.MONGO.MONGO_INITDB_DATABASE]
     finally:
         client.close()
+
+
+SqlSession = Annotated[AsyncSession, Depends(get_sql_db_session)]
+NoSqlSession = Annotated[motor_asyncio.AsyncIOMotorDatabase, Depends(get_no_sql_client)]

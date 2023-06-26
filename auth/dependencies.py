@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Annotated, Type
 
 from fastapi import Depends
 from fastapi.security import APIKeyHeader
@@ -25,10 +25,11 @@ class JWTAuthSecurity(APIKeyHeader):
         super().__init__(name=name, description=description, scheme_name=scheme_name, auto_error=auto_error)
 
     async def __call__(
-        self, request: Request, sql_session: AsyncSession = Depends(core_deps.get_sql_db_session)  # noqa
+        self,
+        request: Request,
     ) -> str:
         token: str = await super().__call__(request)
-        user_nickname: str = utils.Authenticator(sql_session).get_user_nickname_from_token(
+        user_nickname: str = utils.Authenticator.get_user_nickname_from_token(
             token, SETTINGS.AUTH.JWT_ACCESS_TOKEN_SECRET_KEY
         )
         return user_nickname
@@ -37,14 +38,14 @@ class JWTAuthSecurity(APIKeyHeader):
 class AuthenticatedUser:
     _schema_user: Type[schemas.UserDB] = schemas.UserDB
 
-    def __init__(self, serializable: bool = True):
+    def __init__(self, serializable: bool = False) -> None:
         self._serializable: bool = serializable
         self._user: models.User | None = None
 
     async def __call__(
         self,
-        nickname: str = Depends(JWTAuthSecurity()),  # noqa
-        sql_session: AsyncSession = Depends(core_deps.get_sql_db_session),  # noqa
+        sql_session: core_deps.SqlSession,
+        nickname: Annotated[str, Depends(JWTAuthSecurity())],
     ) -> models.User | schemas.UserDB:
         await self._set_user(nickname, sql_session)
 
@@ -57,3 +58,7 @@ class AuthenticatedUser:
             .where(models.User.nickname == nickname)
         )
         self._user: models.User = (await sql_session.execute(query)).scalar()
+
+
+UserDBSchema = Annotated[schemas.UserDB, Depends(AuthenticatedUser(serializable=True))]
+User = Annotated[models.User, Depends(AuthenticatedUser())]

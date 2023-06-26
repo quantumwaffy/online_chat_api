@@ -1,6 +1,9 @@
 from core import mixins as core_mixins
 
 
-class ChatDB(core_mixins.EnvSettingsMixin):
-    id: int
+class ChatInput(core_mixins.ORMBaseModelMixin):
     name: str
+
+
+class ChatDB(ChatInput):
+    id: str

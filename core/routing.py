@@ -3,6 +3,7 @@ import dataclasses
 from fastapi import APIRouter
 
 from auth.routers import auth_router, register_router
+from chat.routers import chat_router
 
 
 @dataclasses.dataclass
@@ -10,6 +11,7 @@ class AppRouter:
     v1: tuple[APIRouter, ...] = (
         auth_router,
         register_router,
+        chat_router,
     )
 
     @classmethod

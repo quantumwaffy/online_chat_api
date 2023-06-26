@@ -47,28 +47,31 @@ class Authenticator:
         if user.disabled:
             raise exceptions.BaseAuthExceptionManager.blocked_user
 
-    async def get_user(self, nickname: str, check: bool = False) -> models.User | None:
-        if check:
-            query: Select = (
-                select(models.User)
-                .options(
-                    load_only(
-                        models.User.nickname,
-                    )
+    async def check_user(self, nickname: str) -> None:
+        query: Select = (
+            select(models.User)
+            .options(
+                load_only(
+                    models.User.nickname,
                 )
-                .where(models.User.nickname == nickname)
             )
-        else:
-            query: Select = (
-                select(models.User)
-                .options(load_only(models.User.nickname, models.User.password_hash, models.User.disabled))
-                .where(models.User.nickname == nickname)
-            )
+            .where(models.User.nickname == nickname)
+        )
+        query_result: Result = await self._sql_session.execute(query)
+        if query_result.scalar():
+            raise exceptions.BaseAuthExceptionManager.signup_user_exists
+
+    async def _get_user(self, nickname: str) -> models.User | None:
+        query: Select = (
+            select(models.User)
+            .options(load_only(models.User.nickname, models.User.password_hash, models.User.disabled))
+            .where(models.User.nickname == nickname)
+        )
         query_result: Result = await self._sql_session.execute(query)
         return query_result.scalar()
 
     async def create_jwt_tokens(self, nickname: str, password: str) -> schemas.TokenGeneratedData:
-        user: models.User | None = await self.get_user(nickname)
+        user: models.User | None = await self._get_user(nickname)
         self._check_user_perms(user)
         if not self.password_handler.verify_password(password, user.password_hash):
             raise exceptions.BaseAuthExceptionManager.authentication_error
