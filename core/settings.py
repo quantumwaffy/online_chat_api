@@ -1,5 +1,6 @@
 import abc
 
+from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseSettings
 
 from .mixins import EnvSettingsMixin
@@ -43,6 +44,10 @@ class MongoSettings(ServiceSettings):
             f"{self.MONGO_HOST}/{self.MONGO_INITDB_DATABASE}?authSource={self.MONGO_AUTH_SOURCE}"
             f"&{self.MONGO_EXTRA_URL_PARAMS}"
         )
+
+    @property
+    def client(self) -> AsyncIOMotorClient:
+        return AsyncIOMotorClient(self.url)
 
 
 class RedisSettings(ServiceSettings):

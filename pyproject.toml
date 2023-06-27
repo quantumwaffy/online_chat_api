@@ -20,6 +20,7 @@ motor = "^3.1.2"
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 broadcaster = {extras = ["redis"], version = "^0.2.0"}
+beanie = "^1.19.2"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.3.2"

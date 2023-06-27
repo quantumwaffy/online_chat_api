@@ -1,5 +1,8 @@
+from beanie import init_beanie
 from broadcaster import Broadcast
 from fastapi import FastAPI
+
+from chat import schemas as chat_schemas
 
 from . import routing
 from .settings import SETTINGS
@@ -27,6 +30,10 @@ broadcast: Broadcast = get_broadcast()
 @app.on_event("startup")
 async def startup() -> None:
     await broadcast.connect()
+    await init_beanie(
+        database=SETTINGS.MONGO.client[SETTINGS.MONGO.MONGO_INITDB_DATABASE],
+        document_models=[chat_schemas.Message],
+    )
 
 
 @app.on_event("shutdown")
