@@ -1,15 +1,10 @@
 from beanie import init_beanie
-from broadcaster import Broadcast
 from fastapi import FastAPI
 
 from chat import schemas as chat_schemas
 
-from . import routing
+from . import broadcasting, routing
 from .settings import SETTINGS
-
-
-def get_broadcast() -> Broadcast:
-    return Broadcast(SETTINGS.REDIS.url)
 
 
 def get_app() -> FastAPI:
@@ -24,12 +19,11 @@ def get_app() -> FastAPI:
 
 
 app: FastAPI = get_app()
-broadcast: Broadcast = get_broadcast()
 
 
 @app.on_event("startup")
 async def startup() -> None:
-    await broadcast.connect()
+    await broadcasting.broadcast.connect()
     await init_beanie(
         database=SETTINGS.MONGO.client[SETTINGS.MONGO.MONGO_INITDB_DATABASE],
         document_models=[chat_schemas.Message],
@@ -38,4 +32,4 @@ async def startup() -> None:
 
 @app.on_event("shutdown")
 async def shutdown() -> None:
-    await broadcast.disconnect()
+    await broadcasting.broadcast.disconnect()

@@ -95,6 +95,10 @@ class Authenticator:
             ),
         )
 
+    async def get_prefetched_user_from_token(self, token: str) -> models.User:
+        nickname: str = self.get_user_nickname_from_token(token, SETTINGS.AUTH.JWT_ACCESS_TOKEN_SECRET_KEY)
+        return await self.get_prefetched_user(nickname)
+
     @staticmethod
     def get_user_nickname_from_token(token: str, key: str) -> str:
         try:

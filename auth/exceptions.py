@@ -15,7 +15,7 @@ class BaseAuthExceptionManager:
     )
 
     signup_user_exists: HTTPException = HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_409_CONFLICT,
         detail="User with this nickname already exists",
     )
 

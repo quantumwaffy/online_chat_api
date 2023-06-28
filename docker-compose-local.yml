@@ -59,7 +59,7 @@ services:
       interval: 3s
       timeout: 2s
       retries: 3
-    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD} --port ${REDIS_PORT}
+    command: redis-server --save 20 1 --loglevel warning --port ${REDIS_PORT}
     volumes:
       - cache:/data
 volumes:

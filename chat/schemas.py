@@ -15,22 +15,21 @@ class ChatDB(ChatInput):
     id: str
 
 
-class Message(Document):
-    chat_id: Indexed(uuid.UUID)
+class MessageEvent(BaseModel):
     sent_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
     content: str
+    nickname: str
+
+
+class Message(MessageEvent, Document):
+    chat_id: Indexed(uuid.UUID)
 
     class Settings:
         name = "messages"
 
 
-class HistoryMessage(BaseModel):
-    sent_at: datetime.datetime
-    content: str
-
-
 class ChatHistory(ChatDB):
-    messages: list[HistoryMessage]
+    messages: list[MessageEvent]
 
 
 class UserToChat(BaseModel):

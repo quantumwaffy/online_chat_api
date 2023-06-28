@@ -8,12 +8,11 @@ from . import consts, dependencies, models, schemas, utils
 auth_router: APIRouter = APIRouter(
     prefix="/auth",
     tags=["Auth"],
-    responses={401: {"model": core_schemas.ResponseDetail}},
+    responses={status.HTTP_401_UNAUTHORIZED: {"model": core_schemas.ResponseDetail}},
 )
 
 register_router: APIRouter = APIRouter(
-    prefix="/register",
-    tags=["Register"],
+    prefix="/register", tags=["Register"], responses={status.HTTP_409_CONFLICT: {"model": core_schemas.ResponseDetail}}
 )
 
 

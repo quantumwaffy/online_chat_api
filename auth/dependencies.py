@@ -1,56 +1,51 @@
-from typing import Annotated, Type, Unpack
+from typing import Annotated, Type
 
-from fastapi import Depends
-from fastapi.security import APIKeyHeader, APIKeyQuery
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends, Request
+from fastapi.security import APIKeyHeader
 
 from core import dependencies as core_deps
+from core.settings import SETTINGS
 
-from . import mixins, models, schemas, utils
-
-
-class JWTAuthKeyHeader(mixins.JWTAuthMixin, APIKeyHeader):
-    ...
+from . import models, schemas, utils
 
 
-class JWTAuthKeyQuery(mixins.JWTAuthMixin, APIKeyQuery):
-    ...
+class JWTAuthKeyHeader(APIKeyHeader):
+    def __init__(
+        self,
+        *,
+        name: str = SETTINGS.AUTH.JWT_TOKEN_NAME,
+        description: str = "JWT authentication token",
+        scheme_name: str = "JWT",
+        auto_error: bool = True,
+    ) -> None:
+        super().__init__(name=name, description=description, scheme_name=scheme_name, auto_error=auto_error)
+
+    async def __call__(
+        self,
+        request: Request,
+    ) -> str:
+        token: str = await super().__call__(request)
+        user_nickname: str = utils.Authenticator.get_user_nickname_from_token(
+            token, SETTINGS.AUTH.JWT_ACCESS_TOKEN_SECRET_KEY
+        )
+        return user_nickname
 
 
-class AuthenticatedUser:
+class AuthenticatedUserHeader:
     _schema_user: Type[schemas.UserDB] = schemas.UserDB
 
     def __init__(self, serializable: bool = False) -> None:
         self._serializable: bool = serializable
         self._user: models.User | None = None
 
-    async def __call__(self, **kwargs: Unpack[dict[str, AsyncSession | str]]) -> models.User | schemas.UserDB:
-        await self._set_user(**kwargs)
-        return self._schema_user.from_orm(self._user) if self._serializable else self._user
-
-    async def _set_user(self, sql_session: AsyncSession, nickname: str) -> None:
-        self._user: models.User = await utils.Authenticator(sql_session).get_prefetched_user(nickname)
-
-
-class AuthenticatedUserHeader(AuthenticatedUser):
     async def __call__(
         self,
         sql_session: core_deps.SqlSession,
         nickname: Annotated[str, Depends(JWTAuthKeyHeader())],
     ) -> models.User | schemas.UserDB:
-        return await super().__call__(sql_session=sql_session, nickname=nickname)
-
-
-class AuthenticatedUserQuery(AuthenticatedUser):
-    async def __call__(
-        self,
-        sql_session: core_deps.SqlSession,
-        nickname: Annotated[str, Depends(JWTAuthKeyQuery())],
-    ) -> models.User | schemas.UserDB:
-        return await super().__call__(sql_session=sql_session, nickname=nickname)
+        self._user: models.User = await utils.Authenticator(sql_session).get_prefetched_user(nickname)
+        return self._schema_user.from_orm(self._user) if self._serializable else self._user
 
 
 UserDBSchemaHeader = Annotated[schemas.UserDB, Depends(AuthenticatedUserHeader(serializable=True))]
 UserHeader = Annotated[models.User, Depends(AuthenticatedUserHeader())]
-UserDBSchemaQuery = Annotated[schemas.UserDB, Depends(AuthenticatedUserQuery(serializable=True))]
-UserQuery = Annotated[models.User, Depends(AuthenticatedUserQuery())]

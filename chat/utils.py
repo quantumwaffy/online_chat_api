@@ -2,7 +2,6 @@ from typing import Type
 from uuid import UUID
 
 from beanie.odm.enums import SortDirection
-from motor.motor_asyncio import AsyncIOMotorDatabase
 from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -37,12 +36,10 @@ class ChatHistoryMaker:
         user: auth_models.User,
         chat_id: str,
         sql_session: AsyncSession,
-        no_sql_session: AsyncIOMotorDatabase,
         skip: int,
         limit: int,
     ) -> None:
         self._chat_getter: ChatGetter = self._chat_getter_class(user, chat_id, sql_session)
-        self._no_sql_session: AsyncSession = no_sql_session
         self._skip: int = skip
         self._limit: int = limit
 
@@ -57,5 +54,8 @@ class ChatHistoryMaker:
         return schemas.ChatHistory(
             id=chat.id,
             name=chat.name,
-            messages=[schemas.HistoryMessage(sent_at=message.sent_at, content=message.content) for message in messages],
+            messages=[
+                schemas.MessageEvent(sent_at=message.sent_at, content=message.content, nickname=message.nickname)
+                for message in messages
+            ],
         )

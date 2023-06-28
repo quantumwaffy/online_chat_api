@@ -52,12 +52,11 @@ class MongoSettings(ServiceSettings):
 
 class RedisSettings(ServiceSettings):
     REDIS_HOST: str
-    REDIS_PASSWORD: str
     REDIS_PORT: str
 
     @property
     def url(self) -> str:
-        return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}"
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}"
 
 
 class AuthenticationSettings(EnvSettingsMixin):
