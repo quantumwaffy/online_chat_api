@@ -1,3 +1,4 @@
+from typing import Type
 from uuid import UUID
 
 from beanie.odm.enums import SortDirection
@@ -10,24 +11,13 @@ from auth import models as auth_models
 from . import exceptions, models, schemas
 
 
-class ChatHistoryMaker:
-    def __init__(
-        self,
-        user: auth_models.User,
-        chat_id: str,
-        sql_session: AsyncSession,
-        no_sql_session: AsyncIOMotorDatabase,
-        skip: int,
-        limit: int,
-    ) -> None:
+class ChatGetter:
+    def __init__(self, user: auth_models.User, chat_id: str, sql_session: AsyncSession) -> None:
         self._user: auth_models.User = user
-        self._sql_session: AsyncSession = sql_session
-        self._no_sql_session: AsyncSession = no_sql_session
         self._chat_id: str = chat_id
-        self._skip: int = skip
-        self._limit: int = limit
+        self._sql_session: AsyncSession = sql_session
 
-    async def _get_chat(self) -> models.Chat:
+    async def get(self) -> models.Chat:
         if self._chat_id not in (user_chat.id for user_chat in self._user.chats):
             raise exceptions.BaseChatExceptionManager.not_subscribed
 
@@ -38,16 +28,34 @@ class ChatHistoryMaker:
             raise exceptions.BaseChatExceptionManager.no_chat
         return chat
 
+
+class ChatHistoryMaker:
+    _chat_getter_class: Type[ChatGetter] = ChatGetter
+
+    def __init__(
+        self,
+        user: auth_models.User,
+        chat_id: str,
+        sql_session: AsyncSession,
+        no_sql_session: AsyncIOMotorDatabase,
+        skip: int,
+        limit: int,
+    ) -> None:
+        self._chat_getter: ChatGetter = self._chat_getter_class(user, chat_id, sql_session)
+        self._no_sql_session: AsyncSession = no_sql_session
+        self._skip: int = skip
+        self._limit: int = limit
+
     async def get(self) -> schemas.ChatHistory:
-        chat: models.Chat = await self._get_chat()
+        chat: models.Chat = await self._chat_getter.get()
         messages: list[schemas.Message] = await schemas.Message.find_many(
-            schemas.Message.chat_id == UUID(self._chat_id),
+            schemas.Message.chat_id == UUID(chat.id),
             sort=[("sent_at", SortDirection.DESCENDING)],
             skip=self._skip,
             limit=self._limit,
         ).to_list()
         return schemas.ChatHistory(
-            id=self._chat_id,
+            id=chat.id,
             name=chat.name,
             messages=[schemas.HistoryMessage(sent_at=message.sent_at, content=message.content) for message in messages],
         )

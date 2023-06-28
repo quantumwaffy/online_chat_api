@@ -6,7 +6,7 @@ from passlib.context import CryptContext
 from pydantic import ValidationError
 from sqlalchemy import Result, Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import load_only
+from sqlalchemy.orm import load_only, subqueryload
 
 from core.settings import SETTINGS
 
@@ -41,7 +41,7 @@ class Authenticator:
         )
 
     @staticmethod
-    def check_user_perms(user: models.User | None) -> None:
+    def _check_user_perms(user: models.User | None) -> None:
         if not user:
             raise exceptions.BaseAuthExceptionManager.no_user
         if user.disabled:
@@ -61,18 +61,29 @@ class Authenticator:
         if query_result.scalar():
             raise exceptions.BaseAuthExceptionManager.signup_user_exists
 
-    async def _get_user(self, nickname: str) -> models.User | None:
+    async def _fetch_user(self, query: Select) -> models.User:
+        user: models.User = (await self._sql_session.execute(query)).scalar()
+        self._check_user_perms(user)
+        return user
+
+    async def _get_user(self, nickname: str) -> models.User:
         query: Select = (
             select(models.User)
             .options(load_only(models.User.nickname, models.User.password_hash, models.User.disabled))
             .where(models.User.nickname == nickname)
         )
-        query_result: Result = await self._sql_session.execute(query)
-        return query_result.scalar()
+        return await self._fetch_user(query)
+
+    async def get_prefetched_user(self, nickname: str) -> models.User:
+        query: Select = (
+            select(models.User)
+            .options(subqueryload(models.User.chats), subqueryload(models.User.roles))
+            .where(models.User.nickname == nickname)
+        )
+        return await self._fetch_user(query)
 
     async def create_jwt_tokens(self, nickname: str, password: str) -> schemas.TokenGeneratedData:
-        user: models.User | None = await self._get_user(nickname)
-        self.check_user_perms(user)
+        user: models.User = await self._get_user(nickname)
         if not self.password_handler.verify_password(password, user.password_hash):
             raise exceptions.BaseAuthExceptionManager.authentication_error
         return schemas.TokenGeneratedData(

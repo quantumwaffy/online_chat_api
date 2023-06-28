@@ -31,3 +31,8 @@ class HistoryMessage(BaseModel):
 
 class ChatHistory(ChatDB):
     messages: list[HistoryMessage]
+
+
+class UserToChat(BaseModel):
+    user_nickname: str
+    chat_id: str

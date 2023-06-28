@@ -38,7 +38,7 @@ async def login(user_login_data: schemas.LoginUser, sql_session: core_deps.SqlSe
 
 
 @auth_router.get("/me")
-async def get_me(user: dependencies.UserDBSchema) -> schemas.UserDB:  # noqa
+async def get_me(user: dependencies.UserDBSchemaHeader) -> schemas.UserDB:  # noqa
     return user
 
 
