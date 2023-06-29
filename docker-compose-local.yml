@@ -55,7 +55,7 @@ services:
     container_name: redis
     restart: on-failure
     healthcheck:
-      test: redis-cli -p ${REDIS_PORT} -a ${REDIS_PASSWORD} ping | grep PONG
+      test: redis-cli -p ${REDIS_PORT} ping | grep PONG
       interval: 3s
       timeout: 2s
       retries: 3

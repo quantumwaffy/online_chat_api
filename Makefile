@@ -1,6 +1,12 @@
-#!make
+.PHONY: help env up stop rm rmv rmi logs sh init_linters lint sqlmake sqlupgrade
 
-.PHONY: help up stop rm rmv rmi logs sh init_linters lint sqlmake sqlupgrade
+# --- Application virtual environment settings (can be changed)
+env_file_name := .env
+env_snippet_repo := git@github.com:018a4fe6839e767d15d46010e1cbd79e.git
+
+# --- Application settings
+default_env_file_name := .env
+env_clone_dir := env_gist_temp
 
 # --- Docker
 compose := docker compose -f docker-compose-local.yml
@@ -19,25 +25,35 @@ help:
 	@echo "    sqlmake MESSAGE          Make migrations with provided MESSAGE for the SQL database"
 	@echo "    sqlrun                   Run migrations in the SQL database"
 
+
+env:
+	@if [ ! -f $(default_env_file_name) ]; then \
+  		git clone  $(env_snippet_repo) $(env_clone_dir) && \
+  		mv $(env_clone_dir)/$(env_file_name) ./$(default_env_file_name) && \
+  		rm -rf $(env_clone_dir); \
+  	fi
+  	env_arg := --env-file $(default_env_file_name)
+
+
 init_linters:
 	@pre-commit install
 
-up:
+up: env
 	@$(compose) $(env_arg) up -d
 
-stop:
+stop: env
 	@$(compose) $(env_arg) stop
 
-rm:
+rm: env
 	@$(compose) $(env_arg) down
 
-rmv:
+rmv: env
 	@$(compose) $(env_arg) down -v
 
-rmi:
+rmi: env
 	@$(compose) $(env_arg) down --rmi all -v
 
-logs:
+logs: env
 	@$(compose) logs -f
 
 sh: up
