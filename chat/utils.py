@@ -54,8 +54,5 @@ class ChatHistoryMaker:
         return schemas.ChatHistory(
             id=chat.id,
             name=chat.name,
-            messages=[
-                schemas.MessageEvent(sent_at=message.sent_at, content=message.content, nickname=message.nickname)
-                for message in messages
-            ],
+            messages=messages,
         )

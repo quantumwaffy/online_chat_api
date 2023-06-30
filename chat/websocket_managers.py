@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 from fastapi import WebSocket
 from starlette.websockets import WebSocketDisconnect
@@ -6,7 +7,7 @@ from starlette.websockets import WebSocketDisconnect
 from auth import models as auth_models
 from core.broadcasting import broadcast
 
-from . import models, schemas
+from . import json_codecs, models, schemas
 
 
 class BaseWebSocketManager:
@@ -23,16 +24,21 @@ class BaseWebSocketManager:
     async def _send(self) -> None:
         async with broadcast.subscribe(channel=self._chat.id) as subscriber:
             async for event in subscriber:
-                await self._websocket.send_text(event.message)
-
-    async def _save_message(self, content: str) -> None:
-        await schemas.Message(content=content, chat_id=self._chat.id, nickname=self._user.nickname).insert()
+                await self._websocket.send_json(json.loads(event.message))
 
     async def _receive(self) -> None:
-        async for message_event in self._websocket.iter_text():
-            if message_event:
-                await self._save_message(message_event)
-                await broadcast.publish(self._chat.id, message=message_event)
+        async for content in self._websocket.iter_text():
+            if content:
+                message_event: schemas.Message = schemas.Message(
+                    content=content, nickname=self._user.nickname, chat_id=self._chat.id
+                )
+                await message_event.insert()
+                await broadcast.publish(
+                    self._chat.id,
+                    message=schemas.MessageEvent(**message_event.dict()).json(
+                        cls=json_codecs.DateTimeEncoder,
+                    ),
+                )
 
     async def run(self) -> None:
         try:

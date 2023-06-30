@@ -75,8 +75,8 @@ async def websocket_manager(
 
 
 # TODO: REMOVE CODE BELOW - ONLY FOR TEST
-@chat_router.get("/", response_class=HTMLResponse)
-async def index():
+@chat_router.get("/{chat_id}/{token}", response_class=HTMLResponse)
+async def index(chat_id: str, token: str):
     return HTMLResponse(
         """
 <!DOCTYPE html>
@@ -85,21 +85,20 @@ async def index():
       <title>Chat</title>
          <script>
    var ws = new WebSocket(
-   "ws://127.0.0.1:8000/api/v1/chat/ws/de06a3eb-ba12-43a1-a751-6c08f7746b9e/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXV\
-CJ9.eyJzdWIiOiJxd2VydHkiLCJleHAiOjE3NDc4NTk2OTZ9.KdlnT2fRHy-6ZPmpcMRhlsnWzeBJ2ifYuO4JuBl9EBg");
-   ws.onmessage = function(event) {
+   "ws://127.0.0.1:8001/api/v1/chat/ws/{chat_id}/{token}");
+   ws.onmessage = function(event) {{
    var messages = document.getElementById('messages')
    var message = document.createElement('li')
    var content = document.createTextNode(event.data)
    message.appendChild(content)
    messages.appendChild(message)
-};
-function sendMessage(event) {
+}};
+function sendMessage(event) {{
    var input = document.getElementById("messageText")
    ws.send(input.value)
    input.value = ''
    event.preventDefault()
-}
+}}
    </script>
    </head>
    <body>
@@ -112,5 +111,7 @@ function sendMessage(event) {
       </ul>
    </body>
 </html>
-   """
+   """.format(
+            chat_id=chat_id, token=token
+        )
     )
